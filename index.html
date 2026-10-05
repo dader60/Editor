@@ -293,6 +293,37 @@
             transform: scale(0.99);
         }
 
+        /* 已學習的部門：變灰、不可選取、顯示「已學習」標籤 */
+        .dept-option.learned {
+            background: #f0f0f0 !important;
+            border-color: #cccccc !important;
+            color: #999999 !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+            opacity: 0.7;
+        }
+
+        .dept-option.learned::before {
+            background: #e0e0e0 !important;
+            border-color: #cccccc !important;
+            content: '' !important;
+        }
+
+        .dept-option.learned::after {
+            content: '✔ 已學習';
+            position: absolute;
+            right: 1.2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #4caf50;
+            background: #e8f5e9;
+            padding: 0.2rem 0.7rem;
+            border-radius: 1rem;
+            white-space: nowrap;
+        }
+
         /* 全選選項特別樣式 */
         .select-all-option {
             background: #fff8e6;
@@ -314,6 +345,36 @@
         .select-all-option.selected::before {
             background: #d4a017;
             border-color: #d4a017;
+        }
+
+        .select-all-option.learned {
+            background: #f0f0f0 !important;
+            border-color: #cccccc !important;
+            color: #999999 !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+            opacity: 0.7;
+        }
+
+        .select-all-option.learned::before {
+            background: #e0e0e0 !important;
+            border-color: #cccccc !important;
+            content: '' !important;
+        }
+
+        .select-all-option.learned::after {
+            content: '✔ 已學習';
+            position: absolute;
+            right: 1.2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #4caf50;
+            background: #e8f5e9;
+            padding: 0.2rem 0.7rem;
+            border-radius: 1rem;
+            white-space: nowrap;
         }
 
         .dept-checkbox {
@@ -1119,6 +1180,11 @@
                 width: 22px;
                 height: 22px;
             }
+            .dept-option.learned::after {
+                right: 0.8rem;
+                font-size: 0.7rem;
+                padding: 0.15rem 0.5rem;
+            }
             .btn {
                 min-width: 100%;
             }
@@ -1292,7 +1358,7 @@
 
                 <div class="dept-grid" id="deptGrid">
                     <!-- 全選選項 -->
-                    <label class="dept-option select-all-option" data-dept="all">
+                    <label class="dept-option select-all-option" data-dept="all" id="selectAllOption">
                         <input type="checkbox" class="dept-checkbox" value="all" id="selectAllCheckbox">
                         ⭐ 全選
                     </label>
@@ -1501,13 +1567,14 @@
             const confirmBtn = document.getElementById('confirmBtn');
             const backBtn = document.getElementById('backBtn');
             const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const selectAllOption = document.getElementById('selectAllOption');
             const allCheckboxes = document.querySelectorAll('.dept-checkbox:not(#selectAllCheckbox)');
-            const selectAllOption = document.querySelector('.select-all-option');
 
             // 狀態
             let selectedDepts = [];
             let currentPageIndex = 0;
             let learnedStatus = {};
+            let permanentlyLearned = {};  // 只在當前頁面有效，重新整理就恢復
             let rulesUnderstood = false;
 
             // 更新標籤樣式
@@ -1522,22 +1589,47 @@
                 });
             }
 
+            // 標記已永久學習的部門（變灰、不可選）
+            function markLearnedDepts() {
+                document.querySelectorAll('.dept-option').forEach(label => {
+                    const deptKey = label.dataset.dept;
+                    if (deptKey && permanentlyLearned[deptKey]) {
+                        label.classList.add('learned');
+                        const cb = label.querySelector('.dept-checkbox');
+                        if (cb) cb.checked = false;
+                    } else {
+                        label.classList.remove('learned');
+                    }
+                });
+                // 如果所有部門都學完了，全選也標記為已學習
+                const allDeptKeys = ['info', 'post', 'line', 'event', 'complaint', 'news', 'assistant'];
+                const allLearned = allDeptKeys.every(key => permanentlyLearned[key]);
+                if (allLearned) {
+                    selectAllOption.classList.add('learned');
+                    selectAllCheckbox.checked = false;
+                } else {
+                    selectAllOption.classList.remove('learned');
+                }
+            }
+
             // 全選邏輯
             function updateSelectAllState() {
                 const deptCheckboxes = document.querySelectorAll('.dept-checkbox:not(#selectAllCheckbox)');
                 let allChecked = true;
-                let anyChecked = false;
+                let visibleCount = 0;
                 deptCheckboxes.forEach(cb => {
-                    if (cb.checked) anyChecked = true;
-                    else allChecked = false;
+                    const label = cb.closest('.dept-option');
+                    if (label && label.classList.contains('learned')) return;
+                    visibleCount++;
+                    if (!cb.checked) allChecked = false;
                 });
 
-                if (deptCheckboxes.length === 0) {
+                if (visibleCount === 0) {
                     allChecked = false;
                 }
 
-                selectAllCheckbox.checked = allChecked;
-                if (allChecked) {
+                selectAllCheckbox.checked = allChecked && visibleCount > 0;
+                if (selectAllCheckbox.checked) {
                     selectAllOption.classList.add('selected');
                 } else {
                     selectAllOption.classList.remove('selected');
@@ -1548,6 +1640,8 @@
             selectAllCheckbox.addEventListener('change', function() {
                 const deptCheckboxes = document.querySelectorAll('.dept-checkbox:not(#selectAllCheckbox)');
                 deptCheckboxes.forEach(cb => {
+                    const label = cb.closest('.dept-option');
+                    if (label && label.classList.contains('learned')) return;
                     cb.checked = this.checked;
                 });
                 updateLabelStyles();
@@ -1563,6 +1657,7 @@
 
             // 更新標籤樣式與全選狀態
             function refreshUI() {
+                markLearnedDepts();
                 updateLabelStyles();
                 updateSelectAllState();
             }
@@ -1590,6 +1685,8 @@
             confirmBtn.addEventListener('click', function() {
                 const selected = [];
                 allCheckboxes.forEach(cb => {
+                    const label = cb.closest('.dept-option');
+                    if (label && label.classList.contains('learned')) return;
                     if (cb.checked) selected.push(cb.value);
                 });
 
@@ -1616,8 +1713,9 @@
                 showPage('teaching');
             }
 
-            // 返回按鈕（自己回到選擇部門）
+            // 返回按鈕
             backBtn.addEventListener('click', function() {
+                refreshUI();
                 showPage('select');
             });
 
@@ -1634,7 +1732,6 @@
                 warningOverlay.classList.remove('show');
             });
 
-            // 條例完成按鈕 → 顯示完成提示
             rulesDoneBtn.addEventListener('click', function() {
                 if (!rulesUnderstood) {
                     alert('請先勾選「我已了解」！');
@@ -1644,15 +1741,22 @@
                 completeOverlay.classList.add('show');
             });
 
-            // 結束按鈕 → 顯示再見畫面
             completeEndBtn.addEventListener('click', function() {
                 completeOverlay.classList.remove('show');
                 goodbyeScreen.classList.add('show');
             });
 
-            // 單選確認 - 是，回選擇部門
+            // 單選確認 - 是，回選擇部門（標記已學習）
             singleConfirmYes.addEventListener('click', function() {
                 singleConfirmOverlay.classList.remove('show');
+                selectedDepts.forEach(key => {
+                    if (learnedStatus[key]) {
+                        permanentlyLearned[key] = true;
+                    }
+                });
+                selectAllCheckbox.checked = false;
+                allCheckboxes.forEach(cb => { cb.checked = false; });
+                refreshUI();
                 showPage('select');
             });
 
@@ -1662,7 +1766,6 @@
                 showRules();
             });
 
-            // 顯示小編條例
             function showRules() {
                 rulesUnderstood = false;
                 rulesCheckboxArea.classList.remove('checked');
@@ -1718,18 +1821,14 @@
                         this.querySelector('.checkbox-box').textContent = '☑';
 
                         setTimeout(() => {
-                            // 如果還有下一個部門，繼續
                             if (currentPageIndex < selectedDepts.length - 1) {
                                 currentPageIndex++;
                                 renderCurrentPage();
                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                             } else {
-                                // 已經是最後一個部門
                                 if (selectedDepts.length === 1) {
-                                    // 只有一個部門，詢問是否繼續學習
                                     singleConfirmOverlay.classList.add('show');
                                 } else {
-                                    // 多個部門，直接進入小編條例
                                     showRules();
                                 }
                             }
