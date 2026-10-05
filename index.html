@@ -539,17 +539,18 @@
             font-size: 1.1em;
         }
 
+        /* 本地影片播放器 */
         .video-wrapper {
             position: relative;
             width: 100%;
             border-radius: 1.2rem;
             overflow: hidden;
-            background: #eef4fa;
+            background: #000;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             aspect-ratio: 16 / 9;
         }
 
-        .video-wrapper iframe {
+        .video-wrapper video {
             position: absolute;
             top: 0;
             left: 0;
@@ -557,6 +558,8 @@
             height: 100%;
             border: 0;
             display: block;
+            object-fit: contain;
+            background: #000;
         }
 
         .learned-checkbox-area {
@@ -1235,6 +1238,8 @@
             }, totalAnimTime);
 
             // ========== 部門資料 ==========
+            // 每個部門對應一個 mp4 檔案（與 index.html 同層）
+            // 若檔名不同，請自行修改 videoFile 的值
             const deptData = {
                 info: {
                     name: '資訊部',
@@ -1245,7 +1250,7 @@
                         <p>3. 管理公司官方網站與內部資料庫。</p>
                         <p>4. 確保資訊安全，定期更新防毒與密碼政策。</p>
                     `,
-                    videoId: 'dQw4w9WgXcQ'
+                    videoFile: '資訊部.mp4'
                 },
                 post: {
                     name: '發文部',
@@ -1262,7 +1267,7 @@
                         </ol>
                         <p class="red-warning">※ 若匿名不確定是否可以發可以在群組問一下</p>
                     `,
-                    videoId: 'dQw4w9WgXcQ'
+                    videoFile: '發文部.mp4'
                 },
                 line: {
                     name: '官方賴客服',
@@ -1273,7 +1278,7 @@
                         <p>3. 記錄常見問題並反饋給相關部門。</p>
                         <p>4. 維持客服滿意度與回應速度。</p>
                     `,
-                    videoId: 'dQw4w9WgXcQ'
+                    videoFile: '官方賴客服.mp4'
                 },
                 event: {
                     name: '活動部',
@@ -1284,7 +1289,7 @@
                         <p>3. 活動現場執行與直播。</p>
                         <p>4. 活動後成效檢討與報告。</p>
                     `,
-                    videoId: 'dQw4w9WgXcQ'
+                    videoFile: '活動部.mp4'
                 },
                 complaint: {
                     name: '投訴部',
@@ -1295,7 +1300,7 @@
                         <p>3. 與相關部門協調解決方案。</p>
                         <p>4. 追蹤後續處理狀況並結案。</p>
                     `,
-                    videoId: 'dQw4w9WgXcQ'
+                    videoFile: '投訴部.mp4'
                 },
                 news: {
                     name: '消息部',
@@ -1306,7 +1311,7 @@
                         <p>3. 發布即時消息至各平台。</p>
                         <p>4. 確保訊息準確性與時效性。</p>
                     `,
-                    videoId: 'dQw4w9WgXcQ'
+                    videoFile: '消息部.mp4'
                 },
                 assistant: {
                     name: '版主助理',
@@ -1317,7 +1322,7 @@
                         <p>3. 引導新成員熟悉版規。</p>
                         <p>4. 舉辦小型社群活動。</p>
                     `,
-                    videoId: 'dQw4w9WgXcQ'
+                    videoFile: '版主助理.mp4'
                 }
             };
 
@@ -1449,7 +1454,6 @@
                 pageIndicator.textContent = `第 ${currentPageIndex + 1} / ${total} 頁`;
                 deptNameIndicator.textContent = dept.name;
 
-                const embedUrl = `https://www.youtube-nocookie.com/embed/${dept.videoId}?rel=0&modestbranding=1&playsinline=1`;
                 const isLearned = learnedStatus[currentKey] || false;
 
                 // 影片標題＝部門名稱
@@ -1464,9 +1468,10 @@
                             <div class="text-guide">${dept.text}</div>
                             <div class="video-title">${videoTitle}</div>
                             <div class="video-wrapper">
-                                <iframe src="${embedUrl}" title="${videoTitle}"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                    allowfullscreen loading="lazy"></iframe>
+                                <video controls playsinline preload="metadata">
+                                    <source src="${dept.videoFile}" type="video/mp4">
+                                    您的瀏覽器不支援影片播放。
+                                </video>
                             </div>
                         </div>
                         <div class="learned-checkbox-area ${isLearned ? 'checked' : ''}" id="learnedArea" data-dept="${currentKey}">
