@@ -293,6 +293,29 @@
             transform: scale(0.99);
         }
 
+        /* 全選選項特別樣式 */
+        .select-all-option {
+            background: #fff8e6;
+            border-color: #f0c674;
+            color: #8a5a00;
+            font-weight: 700;
+        }
+
+        .select-all-option::before {
+            border-color: #f0c674;
+        }
+
+        .select-all-option.selected {
+            background: #fdebb8;
+            border-color: #d4a017;
+            color: #6b4400;
+        }
+
+        .select-all-option.selected::before {
+            background: #d4a017;
+            border-color: #d4a017;
+        }
+
         .dept-checkbox {
             position: absolute;
             opacity: 0;
@@ -876,6 +899,69 @@
             margin: 0 auto;
         }
 
+        /* ========== 單一部門確認彈出視窗 ========== */
+        .single-confirm-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(11, 44, 68, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 1.5rem;
+            backdrop-filter: blur(8px);
+        }
+
+        .single-confirm-overlay.show {
+            display: flex;
+            animation: fadeInOverlay 0.4s ease;
+        }
+
+        .single-confirm-box {
+            background: #ffffff;
+            border-radius: 2.5rem;
+            padding: 3rem 2rem;
+            max-width: 460px;
+            width: 100%;
+            box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.5);
+            animation: popIn 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+            text-align: center;
+        }
+
+        .single-confirm-box .confirm-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .single-confirm-box h2 {
+            font-size: clamp(1.3rem, 5vw, 1.7rem);
+            font-weight: 800;
+            color: #1e2b3a;
+            margin-bottom: 1rem;
+        }
+
+        .single-confirm-box p {
+            color: #5f7d9c;
+            font-size: clamp(0.95rem, 3.8vw, 1.1rem);
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .single-confirm-box .confirm-buttons {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .single-confirm-box .btn {
+            flex: 1 0 auto;
+            min-width: 130px;
+        }
+
         /* ========== 完成提示彈出視窗 ========== */
         .complete-overlay {
             position: fixed;
@@ -1079,6 +1165,16 @@
                 padding: 2.5rem 1.3rem;
                 border-radius: 2rem;
             }
+            .single-confirm-box {
+                padding: 2.5rem 1.3rem;
+                border-radius: 2rem;
+            }
+            .single-confirm-box .confirm-buttons {
+                flex-direction: column;
+            }
+            .single-confirm-box .btn {
+                min-width: 100%;
+            }
         }
     </style>
 </head>
@@ -1147,6 +1243,19 @@
         </div>
     </div>
 
+    <!-- ========== 單一部門確認彈出視窗 ========== -->
+    <div class="single-confirm-overlay" id="singleConfirmOverlay">
+        <div class="single-confirm-box">
+            <div class="confirm-icon">🤔</div>
+            <h2>只選擇一個部門</h2>
+            <p>您已完成這個部門的學習！<br>是否要回到選擇部門繼續學習其他部門？</p>
+            <div class="confirm-buttons">
+                <button class="btn btn-primary" id="singleConfirmYes" type="button">✔ 是</button>
+                <button class="btn" id="singleConfirmNo" type="button">✕ 否</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ========== 完成提示彈出視窗 ========== -->
     <div class="complete-overlay" id="completeOverlay">
         <div class="complete-box">
@@ -1182,6 +1291,12 @@
                 </div>
 
                 <div class="dept-grid" id="deptGrid">
+                    <!-- 全選選項 -->
+                    <label class="dept-option select-all-option" data-dept="all">
+                        <input type="checkbox" class="dept-checkbox" value="all" id="selectAllCheckbox">
+                        ⭐ 全選
+                    </label>
+
                     <label class="dept-option" data-dept="info">
                         <input type="checkbox" class="dept-checkbox" value="info">
                         資訊部
@@ -1265,8 +1380,6 @@
             }, totalAnimTime);
 
             // ========== 部門資料 ==========
-            // 每個部門對應一個 mp4 檔案（與 index.html 同層）
-            // 若檔名不同，請自行修改 videoFile 的值
             const deptData = {
                 info: {
                     name: '資訊部',
@@ -1377,6 +1490,9 @@
             const rulesCheckboxArea = document.getElementById('rulesCheckboxArea');
             const warningOverlay = document.getElementById('warningOverlay');
             const warningCloseBtn = document.getElementById('warningCloseBtn');
+            const singleConfirmOverlay = document.getElementById('singleConfirmOverlay');
+            const singleConfirmYes = document.getElementById('singleConfirmYes');
+            const singleConfirmNo = document.getElementById('singleConfirmNo');
             const completeOverlay = document.getElementById('completeOverlay');
             const completeEndBtn = document.getElementById('completeEndBtn');
             const goodbyeScreen = document.getElementById('goodbyeScreen');
@@ -1384,7 +1500,9 @@
             const clearBtn = document.getElementById('clearBtn');
             const confirmBtn = document.getElementById('confirmBtn');
             const backBtn = document.getElementById('backBtn');
-            const checkboxes = document.querySelectorAll('.dept-checkbox');
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const allCheckboxes = document.querySelectorAll('.dept-checkbox:not(#selectAllCheckbox)');
+            const selectAllOption = document.querySelector('.select-all-option');
 
             // 狀態
             let selectedDepts = [];
@@ -1404,9 +1522,50 @@
                 });
             }
 
-            checkboxes.forEach(cb => {
-                cb.addEventListener('change', updateLabelStyles);
+            // 全選邏輯
+            function updateSelectAllState() {
+                const deptCheckboxes = document.querySelectorAll('.dept-checkbox:not(#selectAllCheckbox)');
+                let allChecked = true;
+                let anyChecked = false;
+                deptCheckboxes.forEach(cb => {
+                    if (cb.checked) anyChecked = true;
+                    else allChecked = false;
+                });
+
+                if (deptCheckboxes.length === 0) {
+                    allChecked = false;
+                }
+
+                selectAllCheckbox.checked = allChecked;
+                if (allChecked) {
+                    selectAllOption.classList.add('selected');
+                } else {
+                    selectAllOption.classList.remove('selected');
+                }
+            }
+
+            // 全選點擊
+            selectAllCheckbox.addEventListener('change', function() {
+                const deptCheckboxes = document.querySelectorAll('.dept-checkbox:not(#selectAllCheckbox)');
+                deptCheckboxes.forEach(cb => {
+                    cb.checked = this.checked;
+                });
+                updateLabelStyles();
             });
+
+            // 個別部門點擊時，更新全選狀態
+            allCheckboxes.forEach(cb => {
+                cb.addEventListener('change', function() {
+                    updateLabelStyles();
+                    updateSelectAllState();
+                });
+            });
+
+            // 更新標籤樣式與全選狀態
+            function refreshUI() {
+                updateLabelStyles();
+                updateSelectAllState();
+            }
 
             // 切換頁面
             function showPage(pageId) {
@@ -1422,21 +1581,29 @@
 
             // 清除按鈕
             clearBtn.addEventListener('click', function() {
-                checkboxes.forEach(cb => { cb.checked = false; });
-                updateLabelStyles();
+                selectAllCheckbox.checked = false;
+                allCheckboxes.forEach(cb => { cb.checked = false; });
+                refreshUI();
             });
 
             // 確定按鈕
             confirmBtn.addEventListener('click', function() {
                 const selected = [];
-                checkboxes.forEach(cb => {
+                allCheckboxes.forEach(cb => {
                     if (cb.checked) selected.push(cb.value);
                 });
 
                 if (selected.length === 0) return;
 
                 const orderedKeys = ['info', 'post', 'line', 'event', 'complaint', 'news', 'assistant'];
-                selectedDepts = orderedKeys.filter(key => selected.includes(key));
+                const ordered = orderedKeys.filter(key => selected.includes(key));
+
+                startLearning(ordered);
+            });
+
+            // 開始學習
+            function startLearning(ordered) {
+                selectedDepts = ordered;
                 currentPageIndex = 0;
 
                 learnedStatus = {};
@@ -1447,9 +1614,9 @@
                 rulesUnderstood = false;
                 renderCurrentPage();
                 showPage('teaching');
-            });
+            }
 
-            // 返回按鈕
+            // 返回按鈕（自己回到選擇部門）
             backBtn.addEventListener('click', function() {
                 showPage('select');
             });
@@ -1483,6 +1650,26 @@
                 goodbyeScreen.classList.add('show');
             });
 
+            // 單選確認 - 是，回選擇部門
+            singleConfirmYes.addEventListener('click', function() {
+                singleConfirmOverlay.classList.remove('show');
+                showPage('select');
+            });
+
+            // 單選確認 - 否，進入小編條例
+            singleConfirmNo.addEventListener('click', function() {
+                singleConfirmOverlay.classList.remove('show');
+                showRules();
+            });
+
+            // 顯示小編條例
+            function showRules() {
+                rulesUnderstood = false;
+                rulesCheckboxArea.classList.remove('checked');
+                rulesCheckboxArea.querySelector('.checkbox-box').textContent = '□';
+                rulesOverlay.classList.add('show');
+            }
+
             // 渲染當前頁面
             function renderCurrentPage() {
                 if (!selectedDepts || selectedDepts.length === 0) return;
@@ -1496,8 +1683,6 @@
                 deptNameIndicator.textContent = dept.name;
 
                 const isLearned = learnedStatus[currentKey] || false;
-
-                // 影片標題＝部門名稱
                 const videoTitle = dept.name;
 
                 teachingContainer.innerHTML = `
@@ -1533,15 +1718,20 @@
                         this.querySelector('.checkbox-box').textContent = '☑';
 
                         setTimeout(() => {
+                            // 如果還有下一個部門，繼續
                             if (currentPageIndex < selectedDepts.length - 1) {
                                 currentPageIndex++;
                                 renderCurrentPage();
                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                             } else {
-                                rulesUnderstood = false;
-                                rulesCheckboxArea.classList.remove('checked');
-                                rulesCheckboxArea.querySelector('.checkbox-box').textContent = '□';
-                                rulesOverlay.classList.add('show');
+                                // 已經是最後一個部門
+                                if (selectedDepts.length === 1) {
+                                    // 只有一個部門，詢問是否繼續學習
+                                    singleConfirmOverlay.classList.add('show');
+                                } else {
+                                    // 多個部門，直接進入小編條例
+                                    showRules();
+                                }
                             }
                         }, 600);
                     });
@@ -1549,7 +1739,7 @@
             }
 
             // 初始化
-            updateLabelStyles();
+            refreshUI();
         })();
     </script>
 </body>
