@@ -519,6 +519,33 @@
             font-weight: 700;
         }
 
+        .text-guide .red-warning-underline {
+            color: #c0392b;
+            font-weight: 800;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            text-decoration-thickness: 2px;
+        }
+
+        .text-guide .report-format {
+            background: #eef5fb;
+            border-radius: 0.8rem;
+            padding: 0.8rem 1rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            color: #0d3a55;
+            border-left: 4px solid #1e5f8e;
+            white-space: pre-line;
+            line-height: 1.6;
+        }
+
+        .text-guide .report-format .label {
+            color: #1e5f8e;
+            font-weight: 700;
+        }
+
         /* 影片標題（部門名稱） */
         .video-title {
             font-size: clamp(1.1rem, 4vw, 1.35rem);
@@ -1264,6 +1291,17 @@
                             <li>按下一步檢查比例是否選擇正方形。</li>
                             <li>正確後檢查貼文對齊一條線。</li>
                             <li>檢查無誤無需音樂直接按分享。</li>
+                            <li>發完匿名後要在群組回報每日彙報，若有其他發文部的發文，請接上上一個的。<br>
+                                <span style="font-weight:700; color:#1e5f8e;">規格：</span>
+                                <div class="report-format">月份/日期每日彙報
+小編00於00:00完成階段發文
+以上報告</div>
+                                <span style="font-weight:700; color:#1e5f8e;">有其他人的規格：</span>
+                                <div class="report-format">月份/日期每日彙報
+小編00於00:00完成階段發文
+小編00於00:00完成階段發文
+以上報告</div>
+                            </li>
                         </ol>
                         <p class="red-warning">※ 若匿名不確定是否可以發可以在群組問一下</p>
                     `,
@@ -1305,11 +1343,14 @@
                 news: {
                     name: '消息部',
                     text: `
-                        <p><strong>消息部核心任務：</strong> 收集與發布最新消息、新聞稿與公告。</p>
-                        <p>1. 監測產業動態與競品資訊。</p>
-                        <p>2. 撰寫新聞稿與官方公告。</p>
-                        <p>3. 發布即時消息至各平台。</p>
-                        <p>4. 確保訊息準確性與時效性。</p>
+                        <p><strong>消息部核心任務：</strong></p>
+                        <ol>
+                            <li>到校務系統登入帳號找到重要訊息。</li>
+                            <li>會看到達德快訊-第 x 週或是其他訊息。</li>
+                            <li>在達德快訊點選開啟就能複製了。</li>
+                            <li>要選擇重要的，若不確定請直接丟到群組詢問。</li>
+                        </ol>
+                        <p class="red-warning-underline">※ 班群也是消息來源</p>
                     `,
                     videoFile: '消息部.mp4'
                 },
